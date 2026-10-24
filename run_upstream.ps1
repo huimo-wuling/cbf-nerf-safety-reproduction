@@ -1,4 +1,4 @@
-# 运行论文实验(上游原版代码,零改动)
+﻿# 运行论文实验(上游原版代码,零改动)
 #
 #   powershell -ExecutionPolicy Bypass -File run_upstream.ps1            # 单积分器(图 2 / 3a)
 #   powershell -ExecutionPolicy Bypass -File run_upstream.ps1 -Which double    # 双积分器(图 4a)
