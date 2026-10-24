@@ -259,6 +259,36 @@ D:\miniconda\envs\nerf-cbf\python.exe C:\Users\L\PycharmProjects\PythonProject3\
 
 ---
 
+### 4.8 中文界面字段对照（使用官方中文语言包时）
+
+中文语言包的译名与英文界面的对应关系如下。括号内为英文名称，用于在英文版或译名不同的版本中定位同一栏位。
+
+| 步骤 | 中文界面 | 英文 | 填写内容 |
+|---|---|---|---|
+| 4.1 | `运行` → `编辑配置...` | Run → Edit Configurations... | — |
+| 4.2-1 | `添加新配置`（左上角 `+`）→ `Python` | Add New Configuration → Python | 不要选 `Python 测试`、`Python 调试服务器`、`Django 服务器` |
+| 4.2-2 | `名称` | Name | `upstream-single` |
+| 4.2-3 | `脚本路径` / `模块名称` | Script path / Module name | 选中 `脚本路径` |
+| 4.2-4 | `脚本路径` | Script path | `...\cbf-nerf\upstream\single_cbf.py` |
+| 4.2-5 | `形参`（部分版本译作"参数"或"脚本参数"） | Parameters | `configs/Replica/room1.yaml --output output/Replica/room1` |
+| 4.2-6 | `Python 解释器` | Python interpreter | 第 2 节验证通过的解释器 |
+| 4.2-6 | `添加解释器` → `添加本地解释器` → `Conda 环境` → `现有环境` | Add Interpreter → Add Local Interpreter → Conda Environment → Existing environment | 指定该解释器的 `python.exe` |
+| 4.2-7 | `工作目录` | Working directory | `...\cbf-nerf\upstream` |
+| 4.2-8 | `环境变量` | Environment variables | 两行键值：`TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD` / `1`；`PYTHONIOENCODING` / `utf-8` |
+| 4.2-9 | `修改选项` → `在输出控制台中模拟终端` | Modify options → Emulate terminal in output console | 先在 `修改选项` 中勾选，复选框才会出现 |
+| 4.2-10 | `应用` → `确定` | Apply → OK | — |
+| 4.3 | `复制配置` | Copy Configuration | 选中 `upstream-single` 后复制，改名 `upstream-double` |
+| 4.6 | `启动前` → `运行另一个配置` | Before launch → Run Another Configuration | 串联数据集占位脚本 |
+| 2.1 | `文件` → `设置` → `项目: <名称>` → `Python 解释器` | File → Settings → Project → Python Interpreter | 项目级默认解释器 |
+| 1.4 | 右键 → `标记为排除` | Mark as Excluded | 减少权重文件的索引开销 |
+
+三处需要注意的译名：
+
+1. `形参`（Parameters）即"传给脚本的命令行参数"，位置在 `脚本路径` 下方。若版本显示为"参数"或"脚本参数"，为同一栏位。
+2. `在输出控制台中模拟终端`（Emulate terminal in output console）在中文版中默认不显示，需先在 `修改选项` 下拉中勾选，复选框才会出现在面板中；漏掉此项会导致中文输出乱码。
+3. `Python 解释器` 有两处：项目级默认解释器（`设置` 中）与运行配置内的解释器下拉框（`编辑配置` 中）。两者可以不同，运行时以运行配置内的为准。
+
+---
 ## 5. 验证顺序与预期输出
 
 | 步 | 操作 | 预期 | 耗时（RTX 5070 Laptop） |
