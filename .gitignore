@@ -1,0 +1,14 @@
+﻿# 上游脚本运行时产生
+upstream/video.avi
+upstream/output/
+upstream/Datasets/
+upstream/__pycache__/
+upstream/src/**/__pycache__/
+upstream/*.png
+
+# 本仓库
+__pycache__/
+*.pyc
+output/
+
+# 说明:assets 去掉了,改用上游原始的 replica_room1.npy/.pth 与 pretrained/*.pt(已入库)
