@@ -78,10 +78,8 @@ goto :done
 
 :run
 echo == [2/2] run upstream %~1   (log: logs\%~2)
-pushd "%UP%"
-"%PY%" -u "%~1" configs/Replica/room1.yaml --output output/Replica/room1 > "%LOGS%\%~2" 2>&1
+"%PY%" "%HERE%tools\run_and_tee.py" "%LOGS%\%~2" "%UP%\%~1" configs/Replica/room1.yaml --output output/Replica/room1
 set "RC=%ERRORLEVEL%"
-popd
 if not "%RC%"=="0" echo    exit code: %RC%
 exit /b 0
 
