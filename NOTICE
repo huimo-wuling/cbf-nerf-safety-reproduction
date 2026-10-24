@@ -1,0 +1,38 @@
+本仓库是论文结果的复现，不是论文作者的官方实现。
+
+论文
+----
+Mukun Tong, Charles Dawson, Chuchu Fan.
+"Enforcing Safety for Vision-based Controllers via Control Barrier Functions
+and Neural Radiance Fields." ICRA 2023.
+arXiv:2209.12266 · https://arxiv.org/abs/2209.12266
+
+上游代码（本仓库 `upstream/` 的来源，逐字节一致）
+-------------------------------------------------
+https://github.com/oscartong2001/nerf_cbf_controller
+commit a514356
+Copyright (c) the original authors. Licensed under the Apache License 2.0
+（见 `LICENSE` 与 `upstream/LICENSE`）。
+
+该上游仓库派生自 NICE-SLAM：
+https://github.com/cvg/nice-slam  (Apache License 2.0)
+
+`upstream/` 的唯一代码改动
+-------------------------
+`upstream/single_cbf.py` 第 199 行：
+
+    -  videoWriter = cv2.VideoWriter('video.avi',fourcc,fps,(240,68))
+    +  videoWriter = cv2.VideoWriter('video.avi',fourcc,fps,(2400,680))
+
+上游以 `(240,68)` 创建视频写入器，而实际写入的帧为 1200×680 左右拼接后的 2400×680，
+OpenCV 会静默丢弃全部帧，`video.avi` 只剩 5.7 KB 文件头。尺寸修正后视频为 150 帧、约 5.3 MB。
+
+`upstream/` 中的权重文件
+------------------------
+`replica_room1.npy`、`replica_room1.pth`、`pretrained/coarse.pt`、`pretrained/middle_fine.pt`
+均为作者在上游仓库中公开的文件，原样保留、未做任何格式转换。
+
+本仓库新增的部分
+----------------
+`tools/`（数据集占位、日志解析出图、视频抽帧、参数扫描）、`run_upstream.ps1`、`run_upstream.sh`、
+`docs/`、`README.md`、`logs/`、`results/` 由本次复现新增，同样以 Apache License 2.0 发布。
