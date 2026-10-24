@@ -142,7 +142,7 @@ python tools/frames_from_video.py upstream/video.avi
 | [`docs/02_学习路线与讲义.md`](docs/02_学习路线与讲义.md) | 讲义：从单/双积分器、刚体运动、CBF 与离散时间条件，到体渲染与实验方法；含定义、代码位置、算例与练习 |
 | [`docs/03_论文翻译与注释.md`](docs/03_论文翻译与注释.md) | 论文逐段翻译与公式详解 |
 | [`docs/04_实现代码与CUDA_学习笔记.md`](docs/04_实现代码与CUDA_学习笔记.md) | CUDA 执行模型、PyTorch 算子与硬件的对应、渲染算法逐层拆解、修改实践 |
-| [`docs/05_PyCharm运行指南.md`](docs/05_PyCharm运行指南.md) | 只给一条最稳妥的复现路径：终端调用 run_upstream.bat（含前置检查、预期输出、失败对照表） |
+| [`docs/05_PyCharm运行指南.md`](docs/05_PyCharm运行指南.md) | 一条命令复现：终端运行 run_upstream.bat（准备、运行、结果） |
 | [`docs/paper_ICRA2023_CBF_NeRF.pdf`](docs/paper_ICRA2023_CBF_NeRF.pdf) | 论文原文 |
 
 ---

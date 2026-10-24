@@ -1,17 +1,20 @@
 @echo off
-rem ---------------------------------------------------------------
-rem  Run the paper experiments with the authors' original code.
-rem  This file is intentionally pure ASCII so that no console
-rem  code page can break it.
+rem ================================================================
+rem  Reproduce the ICRA 2023 CBF+NeRF results with the authors'
+rem  original code (upstream/ is unmodified except one line).
 rem
-rem  Usage:  run_upstream.bat            (single integrator)
-rem          run_upstream.bat double     (double integrator)
-rem          run_upstream.bat all        (both)
+rem  Just run:      run_upstream.bat
+rem  Or with arg:   run_upstream.bat single | double | all
 rem
-rem  Requires: python (or set PYTHON to a full path) with torch.
-rem ---------------------------------------------------------------
-setlocal
+rem  The interpreter is detected automatically (a python that has
+rem  CUDA torch). Override with:  set PYTHON=D:\path\python.exe
+rem
+rem  This file is pure ASCII on purpose: no console code page can
+rem  break it (unlike a UTF-8 .ps1 without BOM under PowerShell 5.1).
+rem ================================================================
+setlocal EnableExtensions
 chcp 65001 >nul
+cd /d "%~dp0"
 set "HERE=%~dp0"
 set "UP=%HERE%upstream"
 set "LOGS=%HERE%logs"
@@ -20,17 +23,33 @@ if not exist "%LOGS%" mkdir "%LOGS%"
 set TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1
 set PYTHONIOENCODING=utf-8
 
-set "PY=%PYTHON%"
-if not defined PY set "PY=python"
-
 set "WHICH=%~1"
 if "%WHICH%"=="" set "WHICH=single"
 
-echo == repo: %HERE%
-"%PY%" --version || goto :err
+rem ---------- find a python that has CUDA torch ----------
+set "PY="
+call :try "%PYTHON%"
+call :try "%NERF_PYTHON%"
+call :try "%CONDA_PREFIX%\python.exe"
+for %%R in ("D:\miniconda\envs" "D:\Anaconda3\envs" "C:\ProgramData\miniconda3\envs" "%USERPROFILE%\miniconda3\envs" "%USERPROFILE%\anaconda3\envs") do (
+  if exist "%%~R" (
+    for /d %%E in ("%%~R\*") do call :try "%%~E\python.exe"
+  )
+)
+call :try "python"
+
+if not defined PY (
+  echo.
+  echo [ERROR] No python with CUDA torch was found.
+  echo         Install one, or point to it explicitly:
+  echo             set PYTHON=D:\miniconda\envs\nerf-cbf\python.exe
+  echo             run_upstream.bat %WHICH%
+  exit /b 1
+)
+echo == interpreter: %PY%
 
 echo.
-echo == [1/2] dataset stub
+echo == [1/2] placeholder dataset
 "%PY%" "%HERE%tools\make_dataset_stub.py" || goto :err
 
 echo.
@@ -58,7 +77,7 @@ call :run double_cbf.py double_upstream.log
 goto :done
 
 :run
-echo == [2/2] run upstream %~1  (log: logs\%~2)
+echo == [2/2] run upstream %~1   (log: logs\%~2)
 pushd "%UP%"
 "%PY%" -u "%~1" configs/Replica/room1.yaml --output output/Replica/room1 > "%LOGS%\%~2" 2>&1
 set "RC=%ERRORLEVEL%"
@@ -66,15 +85,22 @@ popd
 if not "%RC%"=="0" echo    exit code: %RC%
 exit /b 0
 
+:try
+if "%~1"=="" exit /b 0
+if defined PY exit /b 0
+"%~1" -c "import torch,sys;sys.exit(0 if torch.cuda.is_available() else 1)" >nul 2>&1
+if not errorlevel 1 set "PY=%~1"
+exit /b 0
+
 :err
 echo.
-echo FAILED. Check the message above.
+echo FAILED. Read the message above.
 exit /b 1
 
 :done
 echo.
-echo == outputs
-echo    %UP%\video.avi                 (single integrator, 2400x680)
-echo    %LOGS%\*.log                   (raw stdout of the upstream scripts)
-echo    %HERE%results\figures\         (PNG figures and metrics CSV)
+echo == done. Outputs:
+echo    %UP%\video.avi                     surface sequence, paper Fig.2
+echo    %LOGS%\*.log                       raw stdout of the upstream scripts
+echo    %HERE%results\figures\             PNG figures and metrics CSV
 exit /b 0
