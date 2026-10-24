@@ -1,163 +1,245 @@
 # 在 PyCharm 里跑通论文结果
 
-> 本仓库的原则是**上游代码一字不动**（唯一例外：`single_cbf.py` 里 `cv2.VideoWriter` 的尺寸从 `(240,68)` 改成 `(2400,680)`，见 README）。
-> 所以 PyCharm 里的配置要做的，只是"把上游原本在命令行里做的事搬进 IDE"：设一个环境变量、准备占位数据集、在 `upstream/` 目录下运行。
+> 本仓库的原则是**上游代码一字不动**（唯一例外：`single_cbf.py` 第 199 行 `cv2.VideoWriter` 的尺寸从 `(240,68)` 改为 `(2400,680)`，见 README）。
+> PyCharm 里要做的事只有三件：把目录整份复制进去、选对解释器、在 `upstream/` 目录下运行。
 
 ---
 
-## 0. 三个必须知道的点（否则一定跑不起来）
+## 0. 三个必须知道的点（任一不满足都跑不起来）
 
-| 要点 | 值 | 为什么 |
+| 要点 | 值 | 原因 |
 |---|---|---|
-| **环境变量** | `TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1` | torch ≥ 2.6 把 `torch.load` 的默认值改成了 `weights_only=True`，而上游的三个权重文件（`replica_room1.pth`、`pretrained/coarse.pt`、`pretrained/middle_fine.pt`）都是整体 pickle 的对象，不绕过就直接 `UnpicklingError`。这是**唯一**能不改代码的办法。 |
-| **工作目录** | `<仓库>/upstream` | 上游用相对路径读 `configs/Replica/room1.yaml`、`device.txt`、`replica_room1.npy/.pth`，还有 `Datasets/Replica/room1`。 |
-| **占位数据集** | 先跑一次 `python tools/make_dataset_stub.py` | 上游 `NICE_SLAM.__init__` 会读 `Datasets/Replica/room1`，但实验只用第 0 帧做形状校验。占位目录 3 秒生成，不影响任何数值。 |
+| **环境变量** | `TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1` | torch ≥ 2.6 把 `torch.load` 的默认参数 `weights_only` 改为 `True`。上游加载的三个权重（`replica_room1.pth`、`pretrained/coarse.pt`、`pretrained/middle_fine.pt`）都是整体 pickle 对象，在新默认值下抛 `UnpicklingError`。设该变量是**不改代码**的唯一办法。 |
+| **工作目录** | `<仓库>/upstream` | 上游用相对路径读 `configs/Replica/room1.yaml`、`device.txt`、`replica_room1.npy/.pth` 与 `Datasets/Replica/room1`。 |
+| **占位数据集** | 运行一次 `python tools/make_dataset_stub.py` | 上游 `NICE_SLAM.__init__` 会读该目录，但实验只用 `frame_reader[0]` 做形状校验，数值不参与计算。 |
 
 ---
 
-## 1. 配解释器
+## 1. 把代码放进 PyCharm 项目
 
-```bash
-# 建议用 conda(与实测环境一致)
-conda env create -f upstream/environment.yaml     # 上游自己那份(Linux 向,Windows 上装不起来的话见下)
+代码必须**整目录复制**。只复制 `single_cbf.py`、`double_cbf.py` 无法运行：它们依赖同级的 `src/`、`configs/`、`device.txt` 以及 147 MB 权重。
+
+### 方式 A：从本机已有副本复制（推荐）
+
+在 PyCharm 的 Terminal 中执行：
+
+```powershell
+robocopy "C:\Users\L\Desktop\cbf-nerf-safety-reproduction" `
+         "C:\Users\L\PycharmProjects\PythonProject3\cbf-nerf" `
+         /E /XD .git output Datasets __pycache__ /XF video.avi
 ```
 
-Windows 上更稳妥的是自建环境（上游 `environment.yaml` 锁了 Linux + Python 3.7 + torch 1.11/cu113，新卡装不上）：
+`/XD` 排除运行时产物（`output/`、`Datasets/`、缓存），`/XF` 排除视频文件；其余全部复制，约 152 MB。
 
-```bash
+### 方式 B：从 GitHub 克隆
+
+```powershell
+cd C:\Users\L\PycharmProjects\PythonProject3
+git clone https://github.com/huimo-wuling/cbf-nerf-safety-reproduction.git cbf-nerf
+```
+
+### 复制后的结构
+
+```text
+C:\Users\L\PycharmProjects\PythonProject3\
+├── main.py                       项目原有文件,与本文无关
+├── .idea\
+└── cbf-nerf\
+    ├── upstream\                 复现代码与权重(151 MB)
+    │   ├── single_cbf.py         单积分器实验(图 2 / 3a)
+    │   ├── double_cbf.py         双积分器实验(图 4a)
+    │   ├── src\ configs\         NICE-SLAM 实现与配置
+    │   ├── replica_room1.npy/.pth, pretrained\*.pt
+    │   └── device.txt
+    ├── tools\                    新增辅助脚本(占位数据集、出图、抽帧、扫参)
+    ├── logs\ results\ docs\
+    └── run_upstream.ps1 / run_upstream.sh
+```
+
+**不要**用编辑器打开文件再"另存"或复制粘贴文件内容——`.npy`、`.pth`、`.pt` 是二进制权重，文本方式复制会损坏；用资源管理器拖拽或上述命令复制。
+
+### 可选：减少索引开销
+
+PyCharm 会索引 `upstream/pretrained/`（117 MB）与 `replica_room1.npy`（33 MB），导致卡顿。右键这两个条目 → `Mark as Excluded`，不影响运行。
+
+---
+
+## 2. 选解释器并验证
+
+### 2.1 不要使用空环境
+
+新建项目时 PyCharm 常默认选一个空的 conda 环境或新建 venv。本项目需要 `torch`、`numpy`、`opencv-python`、`scipy`、`matplotlib`，缺任一项都会在导入阶段失败。
+
+选择：`File → Settings → Project: <项目名> → Python Interpreter → Add Interpreter → Add Local Interpreter → Conda Environment → Existing environment`，指向一个**已装好 CUDA 版 torch** 的 `python.exe`。
+
+### 2.2 一条命令验证
+
+在 PyCharm 的 Python Console 或 Terminal 中执行：
+
+```python
+import torch, numpy, cv2, scipy, matplotlib
+print(torch.__version__, torch.version.cuda, torch.cuda.is_available())
+print(numpy.__version__, cv2.__version__)
+```
+
+期望输出（实测环境）：
+
+```text
+2.11.0+cu128 12.8 True
+1.26.4 4.11.0
+```
+
+`is_available()` 为 `False` 表示装的是 CPU 版 torch：仍可运行，但每步 1200×680 渲染会慢一到两个数量级。
+
+### 2.3 若环境未安装依赖
+
+```powershell
 conda create -n cbf python=3.11 -y
 conda activate cbf
-pip install torch --index-url https://download.pytorch.org/whl/cu128    # RTX 50 系需要 cu128
+pip install torch --index-url https://download.pytorch.org/whl/cu128   # RTX 50 系需要 cu128
 pip install numpy==1.26.4 scipy matplotlib opencv-python
 ```
 
-PyCharm：`File → Settings → Project → Python Interpreter → Add Interpreter`,选到上面那个 `python.exe`。
-
-**验证**（PyCharm 的 Python Console 里）：
-
-```python
-import torch
-print(torch.__version__, torch.version.cuda, torch.cuda.is_available())
-```
-
-`True` 就说明是 CUDA 版。`False` 说明装成了 CPU 版，虽然也能跑，但每步 7 秒的高分辨率渲染在 CPU 上会变成分钟级。
+上游自带的 `upstream/environment.yaml` 锁定 Linux + Python 3.7 + torch 1.11/cu113，在新显卡与新 Python 上无法安装，不建议使用。
 
 ---
 
-## 2. 准备数据集占位 + 权重
+## 3. 生成占位数据集（一次）
 
-仓库已内置作者发布的权重（`upstream/replica_room1.npy/.pth` + `upstream/pretrained/*.pt`，共约 150 MB），不需要下载。
+在 Terminal 中，工作目录为 `cbf-nerf`：
 
-只需生成数据集占位（在仓库根目录执行一次）：
-
-```bash
+```powershell
+cd C:\Users\L\PycharmProjects\PythonProject3\cbf-nerf
 python tools/make_dataset_stub.py
 ```
 
-它会生成：
+生成：
 
-```
+```text
 upstream/Datasets/Replica/room1/
 ├── traj.txt
 └── results/
-    ├── frame000000.jpg    1200×680 黑图
-    └── depth000000.png    1200×680 常量图
+    ├── frame000000.jpg    1200×680
+    └── depth000000.png    1200×680
 ```
 
-> 想用真数据就跳过这步，把完整的 Replica `room1` 放到同一路径（实验数值不变，因为脚本只读 `frame_reader[0]` 一个张量）。
+脚本根据自身位置定位仓库根目录，无需关心当前工作目录。若要与作者环境完全一致，把完整的 Replica `room1` 覆盖到同一路径即可，实验数值不变。
 
 ---
 
-## 3. 建 Run Configuration
+## 4. 建 Run Configuration
 
-`Run → Edit Configurations → + → Python`。两个实验各一个：
+`Run → Edit Configurations → + → Python`，建两个配置：
 
-| 字段 | 值（两个配置相同，除了 Script path） |
+| 字段 | 值 |
 |---|---|
-| **Script path** | `<仓库>\upstream\single_cbf.py`（双积分器用 `double_cbf.py`） |
+| **Script path** | `...\cbf-nerf\upstream\single_cbf.py`（双积分器改为 `double_cbf.py`） |
 | **Parameters** | `configs/Replica/room1.yaml --output output/Replica/room1` |
-| **Working directory** | `<仓库>\upstream` ← **必须是这个** |
+| **Working directory** | `...\cbf-nerf\upstream` |
 | **Environment variables** | `TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1;PYTHONIOENCODING=utf-8` |
-| **Python interpreter** | 第 1 步选好的 |
-| ☑ Emulate terminal in output console | 建议勾上 |
-| ☑ Run with Python Console（可选） | 想在终端里继续敲代码时勾 |
+| **Python interpreter** | 第 2 节验证通过的那个 |
+| ☑ Emulate terminal in output console | 勾选（否则中文可能乱码） |
 
-两个配置的耗时（RTX 5070 Laptop）：
-
-| 配置 | 步数（上游写死） | 产出 | 耗时 |
-|---|---|---|---|
-| `upstream-single` | 150 帧（15 s 仿真） | `upstream/video.avi`（2400×680，论文图 2 的帧序列） | ≈ 20 min |
-| `upstream-double` | 100 步（10 s 仿真） | 只有日志（上游把视频写出的两行注释掉了） | ≈ 12 min |
-
-> 上游脚本**没有** `--frames` 之类的参数，步数是写死的（`while frame < 150` / `for i in range(100)`）。想缩短只能改源码——那就不叫"零改动"了。
+两个字段是硬要求：`Working directory` 必须指向 `upstream`；环境变量必须包含 `TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1`。
 
 ---
 
-## 4. 跑完出图
+## 5. 验证顺序与预期输出
 
-上游脚本只打印日志、不画图。出图用新增的脚本（不碰上游文件）：
+| 步 | 操作 | 预期 | 耗时（RTX 5070 Laptop） |
+|---|---|---|---|
+| 1 | 运行单积分器配置 | 先输出 4 行 `INFO: ...`，随后打印 `1`、`min_depth = 0.95...`、`intervention = 0` | 首帧约 1 分钟内出现 |
+| 2 | 等待结束 | 进程正常退出；`upstream\video.avi` 约 **5.3 MB**、150 帧、2400×680 | 约 20 分钟 |
+| 3 | 运行双积分器配置 | 逐步打印 `step: i`、`new h = ...`、`min depth = ...`、`new v = ...` | 约 14 分钟 |
+| 4 | 出图（Terminal） | `results\figures\figure3a_single.png`、`figure4a_double.png` 及两个 CSV | 数秒 |
 
-```bash
-python tools/plot_from_log.py logs/single_upstream.log logs/double_upstream.log --csv
+若第 2 步的 `video.avi` 只有约 5.7 KB，说明运行的是未修正尺寸的上游原版文件（本仓库已改为 `(2400,680)`）。
+
+单帧耗时约 7 秒，来自上游每步一次 1200×680 的两趟渲染（粗深度 + 表面细化），与算法本身无关。上游脚本没有 `--frames` 参数，步数写死为 `while frame < 150` 与 `for i in range(100)`。
+
+---
+
+## 6. 日志与出图：IDE 运行 vs Terminal 运行
+
+上游脚本只把内容打印到标准输出，**不写文件**。因此：
+
+- 用 Run Configuration 运行：日志仅出现在 PyCharm 控制台，`logs/` 下没有文件，`tools/plot_from_log.py` 将找不到输入；
+- 要让日志落盘并出图，在 Terminal 中运行：
+
+```powershell
+cd C:\Users\L\PycharmProjects\PythonProject3\cbf-nerf
+$env:TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD = "1"
+cd upstream
+python -u single_cbf.py configs/Replica/room1.yaml --output output/Replica/room1 2>&1 |
+    Tee-Object ..\logs\single_upstream.log
+cd ..
+python tools/plot_from_log.py logs\single_upstream.log --csv
 ```
 
-产出：
+`-u` 使输出不缓冲，日志可实时查看；`Tee-Object` 同时写屏幕与文件（Windows PowerShell 下得到 UTF-16 编码，`plot_from_log.py` 会自动识别）。
 
-- `results/figures/figure3a_single.png` —— 单积分器：最小距离 / CBF 值 / 干预量（对照论文图 3a）
-- `results/figures/figure4a_double.png` —— 双积分器：最小距离 / CBF 值 / 速度 / 干预量（对照论文图 4a）
-- `results/figures/*_metrics.csv` —— 逐帧数值，便于自己复核
-
-> 在 PyCharm 里也可以直接把 `tools/plot_from_log.py` 配一个 Run Configuration（Parameters 填 `logs/single_upstream.log --csv`），跑完双击 PNG 看。
-
-**一步到位**（不建配置也行，直接在 PyCharm 的 Terminal 里）：
+也可使用仓库自带的一键脚本（包含环境变量、占位数据集、日志重定向与出图）：
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File run_upstream.ps1 -Which all
 ```
 
+出图脚本也可单独配置为 Run Configuration：Script path 选 `tools\plot_from_log.py`，Parameters 填 `logs\single_upstream.log --csv`。
+
+图 2 的 RGBd 序列由视频抽帧生成：
+
+```powershell
+python tools\frames_from_video.py upstream\video.avi
+```
+
 ---
 
-## 5. 在 PyCharm 里调试
+## 7. 调试断点
 
-上游代码有 `if __name__ == '__main__':` 保护（`single_cbf.py:152`），所以**可以放心 import**，但断点只能下在 `__main__` 块里。
+上游代码有 `if __name__ == '__main__':` 保护（`single_cbf.py:152`），可以安全 import，但断点只能设在 `__main__` 块内。
 
-适合下断点的位置（`single_cbf.py`）：
-
-| 想看什么 | 行号 | 看哪些变量 |
+| 观察对象 | 位置 | 变量 |
 |---|---|---|
-| 标称指令是否安全 | 118 `if new_h <= alpha * h:` | `new_h`、`h`、`alpha * h` |
-| 10 个候选各自的 `h_{t+1}` | 138 `batch_new_h = ...` | `batch_new_h`（形状 `(10,)`）、`batch_action` |
-| 最终选了谁 | 144 `if torch.norm(best_action, p=2) > 0:` | `best_action`、`new_h` |
-| 每帧的最近距离 | 297 `print('min_depth = ...')` | `depth.min()` |
+| 标称指令是否安全 | `single_cbf.py:118` `if new_h <= alpha * h:` | `new_h`、`h`、`alpha * h` |
+| 10 个候选各自的 `h_{t+1}` | `single_cbf.py:138` `batch_new_h = ...` | `batch_new_h`（形状 `(10,)`）、`batch_action` |
+| 最终选中的动作 | `single_cbf.py:144` `if torch.norm(best_action, p=2) > 0:` | `best_action`、`new_h` |
+| 每帧最近距离 | `single_cbf.py:297` `print('min_depth = ...')` | `depth.min()` |
+| 双积分器的速度更新 | `double_cbf.py:227` `state, robot.v = update_dynamics(...)` | `robot.v` |
 
-**为什么图 3a 的 CBF 曲线可以"算"出来**：主循环把 `d - depth.min()` 当作 `h_t` 传给滤波器，而 `d = 0.1` 是常量，所以 `h_t = 0.1 − min_depth_{t−1}`。`tools/plot_from_log.py` 就是这么重建的。
+CBF 值的重建依据：主循环把 `d - depth.min()` 传给滤波器，而 `d = 0.1` 为常量，故 `h_t = 0.1 − min_depth_{t−1}`；`tools/plot_from_log.py` 按此式计算。
 
 ---
 
-## 6. 常见错误对照表
+## 8. 常见错误对照表
 
 | 现象 | 原因 | 处理 |
 |---|---|---|
-| `_pickle.UnpicklingError: Weights only load failed` | 没设 `TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1` | 在 Run Configuration 的 Environment variables 里加上 |
-| `FileNotFoundError: 'device.txt'` | 工作目录不是 `upstream/` | 把 Working directory 改成 `upstream` |
-| `FileNotFoundError: .../Datasets/Replica/room1/traj.txt` | 没生成占位数据集 | `python tools/make_dataset_stub.py` |
-| `AssertionError` 于 `as_euler`/维度相关 | 占位 `traj.txt` 写坏了 | 删掉 `upstream/Datasets` 重新生成 |
-| `video.avi` 只有 5.7 KB（空壳） | 用的是未打补丁的上游文件（尺寸 `(240,68)`） | 本仓库已改成 `(2400,680)`；若你自己 clone 的上游原版则会重现这个 bug |
-| `torch.cuda.is_available() == False` | 装的是 CPU 版 torch | 重装 CUDA 版 |
-| 每帧要 7~20 秒 | 正常：上游每步都做 1200×680 的两趟渲染 | 等；或改用 `double_cbf.py`（也是同样代价） |
-| 中文日志乱码 | 控制台编码 | 勾 `Emulate terminal in output console` + `PYTHONIOENCODING=utf-8` |
-| 日志文件打开是乱码/带很多空格 | PowerShell `>` 写的是 UTF-16 | `tools/plot_from_log.py` 已自动识别；手工看就用编辑器切换编码 |
+| `ModuleNotFoundError: No module named 'torch'` / `'numpy'` | PyCharm 选的是空环境（如新建项目默认的 Python 3.13 环境） | 第 2 节切换解释器并验证 |
+| `_pickle.UnpicklingError: Weights only load failed` | 未设 `TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1` | 在 Run Configuration 的 Environment variables 中添加 |
+| `FileNotFoundError: 'device.txt'` | 工作目录不是 `upstream` | 改 Working directory |
+| `FileNotFoundError: .../Datasets/Replica/room1/traj.txt` | 未生成占位数据集 | `python tools/make_dataset_stub.py` |
+| `ModuleNotFoundError: No module named 'src'` | Script path 指向了被复制到别处的脚本 | 指向 `cbf-nerf\upstream\single_cbf.py` |
+| `video.avi` 仅 5.7 KB | 运行的是未修正尺寸的上游原版 | 使用本仓库的 `upstream/single_cbf.py`（已改为 `2400,680`） |
+| `logs/` 为空、出图脚本报找不到日志 | 用 Run Configuration 运行，日志未落盘 | 见第 6 节，用 Terminal + `Tee-Object` |
+| `torch.cuda.is_available()` 为 `False` | 装的是 CPU 版 torch | 重装 CUDA 版 |
+| 每帧 7–20 秒 | 正常：上游每步一次 1200×680 两趟渲染 | 等待；或改用双积分器实验（同样代价） |
+| 中文输出乱码 | 控制台编码 | 勾选 `Emulate terminal in output console`，并设 `PYTHONIOENCODING=utf-8` |
+| 日志文件显示为乱码或字符间有空格 | PowerShell 重定向写的是 UTF-16 | `plot_from_log.py` 已自动识别；手工查看时切换编辑器编码 |
+| PyCharm 卡顿 | 索引 147 MB 权重 | 右键 `upstream/pretrained`、`replica_room1.npy` → `Mark as Excluded` |
 
 ---
 
-## 7. 一页速查
+## 9. 一页速查
 
 ```text
+复制     : robocopy <仓库> <项目目录>\cbf-nerf /E /XD .git output Datasets __pycache__
+解释器   : 装有 CUDA 版 torch 的环境, 用 import torch 验证
+数据集   : python tools/make_dataset_stub.py              (一次)
 环境变量 : TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1
-工作目录 : <仓库>\upstream
-数据集   : python tools/make_dataset_stub.py   (只需一次)
-图 3a+2  : upstream\single_cbf.py  configs/Replica/room1.yaml --output output/Replica/room1   (~20 min)
-图 4a    : upstream\double_cbf.py  configs/Replica/room1.yaml --output output/Replica/room1   (~12 min)
-出图     : python tools/plot_from_log.py logs/*.log --csv
-图 5     : python tools/sweep_upstream.py          (~70 min,见脚本内说明)
+工作目录 : <项目>\cbf-nerf\upstream
+图 3a+2  : upstream\single_cbf.py configs/Replica/room1.yaml --output output/Replica/room1   (~20 min)
+图 4a    : upstream\double_cbf.py configs/Replica/room1.yaml --output output/Replica/room1   (~14 min)
+出图     : python tools/plot_from_log.py logs\*.log --csv
+图 2 抽帧: python tools/frames_from_video.py upstream\video.avi
+图 5     : python tools/sweep_upstream.py                 (~70 min)
 ```
