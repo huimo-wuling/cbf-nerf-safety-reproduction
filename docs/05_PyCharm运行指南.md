@@ -129,18 +129,133 @@ upstream/Datasets/Replica/room1/
 
 ## 4. 建 Run Configuration
 
-`Run → Edit Configurations → + → Python`，建两个配置：
+### 4.1 打开对话框
+
+两种入口，效果相同：
+
+- 菜单 `Run → Edit Configurations...`；
+- 或点击窗口右上角运行按钮左侧的下拉框（显示当前配置名）→ `Edit Configurations...`。
+
+已有配置列表在左侧，右侧是该配置的 `Configuration` 面板。
+
+### 4.2 新建第一个配置（单积分器）
+
+按顺序执行：
+
+1. 点击对话框左上角的 `+`（`Add New Configuration`），在弹出列表中选择 **`Python`**。
+   - 不要选 `Python tests`、`Python Debug Server`、`Django server` 等；
+   - 若列表里没有 `Python`，说明当前项目未被识别为 Python 项目：先回到第 2 节配置解释器。
+2. `Name` 输入 `upstream-single`。
+3. 确认面板顶部的单选项为 **`Script path`**（另一项是 `Module name`，用于以 `-m 模块名` 方式运行，本项目不适用）。
+4. `Script path` 点右侧文件夹图标，选择：
+
+   ```text
+   C:\Users\L\PycharmProjects\PythonProject3\cbf-nerf\upstream\single_cbf.py
+   ```
+
+5. `Parameters`（脚本参数）文本框填：
+
+   ```text
+   configs/Replica/room1.yaml --output output/Replica/room1
+   ```
+
+   这两项都是相对路径，相对下面的 `Working directory` 解析：`configs/Replica/room1.yaml` 是场景配置，`--output output/Replica/room1` 指定上游写日志/检查点的目录（会在 `upstream/output/` 下创建）。
+
+6. `Python interpreter` 下拉框选择第 2 节验证通过的那个：
+
+   ```text
+   D:\miniconda\envs\nerf-cbf\python.exe
+   ```
+
+   若下拉列表中没有它，点下拉框右侧的 `...` 或 `Add Interpreter` 添加（同一对话框可完成，不需退出）。
+
+7. `Working directory`（工作目录）改为：
+
+   ```text
+   C:\Users\L\PycharmProjects\PythonProject3\cbf-nerf\upstream
+   ```
+
+   该字段默认是项目根目录，必须手工改。上游用相对路径读取 `device.txt`、`configs/`、`replica_room1.npy/.pth` 与 `Datasets/Replica/room1`，工作目录不对会在第一步就报 `FileNotFoundError: 'device.txt'`。
+
+8. `Environment variables`（环境变量）：点击该行右侧的图标（不同版本为 `...` 或文件夹图标），弹出键值表格，逐行添加两对：
+
+   | Name | Value |
+   |---|---|
+   | `TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD` | `1` |
+   | `PYTHONIOENCODING` | `utf-8` |
+
+   注意是「名称一栏、值一栏」，不要把 `NAME=VALUE` 整串填进 Name。部分版本可直接在单行文本框里用分号书写：`TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1;PYTHONIOENCODING=utf-8`。
+
+9. `Emulate terminal in output console`（在输出控制台模拟终端）：
+   - 2023.1 及以后版本：先点面板右侧的 `Modify options` 下拉，勾选该项，配置面板中才会出现对应复选框，再勾上；
+   - 2022.x 及更早版本：该项直接在 `Configuration` 面板底部，勾上即可。
+
+   勾选后 PyCharm 使用终端渲染输出，中文日志不会乱码。
+
+10. 点击 `Apply` → `OK` 关闭对话框。
+
+### 4.3 复制出第二个配置（双积分器）
+
+在 `Edit Configurations` 对话框中选中 `upstream-single`：
+
+1. 点击对话框左上角的 `Copy Configuration` 按钮（部分版本为 `Ctrl+D`）；
+2. 新配置的 `Name` 改为 `upstream-double`；
+3. 只修改 `Script path`：
+
+   ```text
+   C:\Users\L\PycharmProjects\PythonProject3\cbf-nerf\upstream\double_cbf.py
+   ```
+
+4. 其余字段（Parameters、Working directory、Environment variables、Interpreter、勾选项）保持不变；
+5. `Apply` → `OK`。
+
+### 4.4 运行前的自检
+
+| 检查项 | 应为 |
+|---|---|
+| `Script path` 结尾 | `upstream\single_cbf.py`（或 `upstream\double_cbf.py`） |
+| `Working directory` 结尾 | `\upstream`（**不是** `cbf-nerf`，也不是项目根） |
+| `Parameters` | `configs/Replica/room1.yaml --output output/Replica/room1` |
+| 环境变量条数 | 2 条，且包含 `TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1` |
+| `Python interpreter` | `nerf-cbf` 环境的 `python.exe` |
+
+点选配置后，对话框底部（或运行窗口顶部）会显示将要执行的完整命令行，形如：
+
+```text
+D:\miniconda\envs\nerf-cbf\python.exe C:\Users\L\PycharmProjects\PythonProject3\cbf-nerf\upstream\single_cbf.py
+    configs/Replica/room1.yaml --output output/Replica/room1
+```
+
+命令行与上表一致即配置正确。运行时 PyCharm 也会把这一行打印在运行控制台的第一行，可用它核对实际使用的解释器与参数。
+
+### 4.5 可选：把出图脚本也做成配置
+
+再新建一个 `Python` 配置：
 
 | 字段 | 值 |
 |---|---|
-| **Script path** | `...\cbf-nerf\upstream\single_cbf.py`（双积分器改为 `double_cbf.py`） |
-| **Parameters** | `configs/Replica/room1.yaml --output output/Replica/room1` |
-| **Working directory** | `...\cbf-nerf\upstream` |
-| **Environment variables** | `TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1;PYTHONIOENCODING=utf-8` |
-| **Python interpreter** | 第 2 节验证通过的那个 |
-| ☑ Emulate terminal in output console | 勾选（否则中文可能乱码） |
+| `Name` | `plot-figures` |
+| `Script path` | `...\cbf-nerf\tools\plot_from_log.py` |
+| `Parameters` | `logs\single_upstream.log logs\double_upstream.log --csv` |
+| `Working directory` | `...\cbf-nerf` |
+| `Python interpreter` | 同上 |
 
-两个字段是硬要求：`Working directory` 必须指向 `upstream`；环境变量必须包含 `TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1`。
+该配置不需要环境变量，因为 `plot_from_log.py` 只读日志与写 PNG，不加载 torch 权重。
+
+### 4.6 可选：让实验前自动准备数据集
+
+在实验配置的 `Before launch` 区域点击 `+` → `Run Another Configuration`，选择先把 `make_dataset_stub.py` 配成一个独立配置。这样每次运行实验前都会先生成占位数据集（重复执行是幂等的，会覆盖同名文件）。
+
+### 4.7 与界面相关的常见问题
+
+| 现象 | 原因 | 处理 |
+|---|---|---|
+| 配置列表里没有 `Python` 选项 | 项目未配置 Python 解释器 | 先完成第 2 节 |
+| 找不到 `Emulate terminal in output console` 复选框 | 新版 PyCharm 把它收进 `Modify options` 下拉 | 点 `Modify options` 勾选后再在面板中勾上 |
+| 运行时报 `FileNotFoundError: 'device.txt'` | `Working directory` 仍是项目根 | 改为 `...\upstream` |
+| 运行时报环境变量无效 | 把 `NAME=VALUE` 整串写进了 Name 字段 | 拆成 Name / Value 两栏 |
+| 运行用了错误的解释器 | 配置里的 `Python interpreter` 与项目默认解释器可以不同 | 在配置内单独指定，或改项目默认解释器 |
+| 改了配置却仍按旧参数运行 | 未点 `Apply` | 关闭对话框前点 `Apply` |
 
 ---
 
