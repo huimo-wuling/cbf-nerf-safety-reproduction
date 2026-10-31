@@ -4,6 +4,8 @@
 
 `upstream/` 与论文作者公开代码（[oscartong2001/nerf_cbf_controller](https://github.com/oscartong2001/nerf_cbf_controller)，commit `a514356`）**逐字节一致**，唯一例外是 `single_cbf.py` 中 `cv2.VideoWriter` 的一处尺寸修正（见[运行说明](#运行说明)）。回放、出图、参数扫描等全部放在 `tools/` 下的新增脚本里，不修改上游文件。
 
+仓库包含两套实测环境的结果：**Windows 11**（本文件，`results/`）与 **Ubuntu 原生**（[`linux/`](linux/README_Linux原生复现.md)，`linux/`），两套都遵循同一条"零改动上游"路线。
+
 ---
 
 ## 仓库结构
@@ -29,6 +31,7 @@ run_upstream.ps1 / .sh        一键运行(Windows / Linux)
 logs/                         上游脚本的原始日志
 results/figures/              生成的图与指标 CSV
 docs/                         讲义、论文翻译、PyCharm 指南、CUDA 笔记
+linux/                        Ubuntu 原生复现:指南、环境导出、逐帧日志驱动、Linux 实测结果
 ```
 
 ---
@@ -132,6 +135,25 @@ python tools/frames_from_video.py upstream/video.avi
    上游以 `(240,68)` 创建写入器，而实际帧为 1200×680 左右拼接后的 2400×680，OpenCV 会静默丢弃所有帧，`video.avi` 只剩 5.7 KB 文件头。修正后视频为正常的 150 帧、5.3 MB。
 
 `double_cbf.py` 中视频写入的两行在上游即被注释掉，因此双积分器实验只产生日志，无视频。
+
+---
+
+## Linux 原生复现
+
+同一套实验在 **Ubuntu 26.04 + RTX 5070 Laptop + torch 2.9.1+cu128** 上也完整跑通,全套记录见 [`linux/README_Linux原生复现.md`](linux/README_Linux原生复现.md)。
+
+```bash
+# 零改动路线(与 Windows 版完全一致)
+bash run_upstream.sh single
+
+# 逐帧日志路线(产出可直接对照图 3a / 4a 的日志与图)
+bash linux/run_driver.sh all
+python linux/tools/plot_logs.py
+```
+
+一个常见预期需要澄清:**Linux 并不比 Windows "简单得多"**。真正卡住复现的三件事——RTX 50 系必须 CUDA 12.8+、torch≥2.6 的 `weights_only` 默认值、作者 `VideoWriter` 的尺寸 bug——都与操作系统无关;Linux 只是免去了路径分隔符、控制台编码、多进程 DataLoader、`.bat` 转义这些外围麻烦。既然 Windows 版已经把补丁压到"1 行代码 + 1 个环境变量",Linux 版可省的空间就很有限。详细对比见该文档第 1 节。
+
+> 注:Linux 实测中该机器的 GPU 功耗上限被设为 20 W(默认 50 W、最大 115 W),SM 频率被压在 180 MHz,导致单步耗时约 0.43 s。这属于本机配置问题,**不用于判断是否满足论文的 10 Hz 实时性主张**。
 
 ---
 
