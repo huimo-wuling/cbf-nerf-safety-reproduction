@@ -169,6 +169,7 @@ python linux/tools/plot_logs.py
 | [`docs/04_实现代码与CUDA_学习笔记.md`](docs/04_实现代码与CUDA_学习笔记.md) | CUDA 执行模型、PyTorch 算子与硬件的对应、渲染算法逐层拆解、修改实践 |
 | [`docs/05_PyCharm运行指南.md`](docs/05_PyCharm运行指南.md) | 一条命令复现：终端运行 run_upstream.bat（准备、运行、结果） |
 | [`docs/06_PyTorch与神经网络讲义.md`](docs/06_PyTorch与神经网络讲义.md) | PyTorch 与神经网络系统讲义：张量、自动微分、`nn`、数据管道、训练工程、CNN/RNN/Transformer、性能与部署、调试；16 章 + 3 附录，按官方文档组织，每章含定义、性质与定理、代码实现、算例与练习 |
+| [`docs/06_PyTorch与神经网络讲义.pdf`](docs/06_PyTorch与神经网络讲义.pdf) | 上述讲义的排版版本（A4，47 页）：封面、带页码目录、页眉页脚、MathML 公式与语法高亮代码；生成流程见 [`tools/pdf_build/`](tools/pdf_build/README.md) |
 | [`docs/paper_ICRA2023_CBF_NeRF.pdf`](docs/paper_ICRA2023_CBF_NeRF.pdf) | 论文原文 |
 
 ---

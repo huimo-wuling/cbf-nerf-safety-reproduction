@@ -1,0 +1,218 @@
+@page {
+  size: A4;
+  margin: 20mm 18mm 22mm 18mm;
+}
+
+html {
+  font-family: "Noto Serif CJK SC", "Noto Serif CJK", "Source Han Serif SC", serif;
+  font-size: 10.5pt;
+  line-height: 1.65;
+  color: #1a1a1a;
+}
+
+body { margin: 0; }
+
+h1, h2, h3, h4 {
+  font-family: "Noto Sans CJK SC", "Noto Sans CJK", sans-serif;
+  line-height: 1.35;
+  page-break-after: avoid;
+  break-after: avoid;
+}
+
+h1 {
+  font-size: 20pt;
+  margin: 0 0 14pt 0;
+  padding-bottom: 6pt;
+  border-bottom: 2px solid #2c3e50;
+  break-before: page;
+  page-break-before: always;
+}
+
+/* 封面 */
+header#title-block-header { margin-top: 60mm; text-align: center; }
+h1.title {
+  break-before: auto;
+  page-break-before: auto;
+  border-bottom: none;
+  font-size: 23pt;
+  text-align: center;
+  margin: 0 0 10pt 0;
+  color: #1a2b3c;
+}
+p.subtitle {
+  text-align: center;
+  font-size: 13pt;
+  color: #4a5a6a;
+  margin: 6pt 0 26pt 0;
+  font-family: "Noto Sans CJK SC", sans-serif;
+}
+p.date {
+  text-align: center;
+  font-size: 11pt;
+  color: #666;
+}
+.abstract {
+  margin: 30mm 10mm 0 10mm;
+  padding: 8pt 12pt;
+  border: 0.5pt solid #c8ced4;
+  background: #fafbfc;
+  font-size: 9.5pt;
+  color: #333;
+  text-align: justify;
+}
+
+h2 {
+  font-size: 14pt;
+  margin: 18pt 0 8pt 0;
+  color: #2c3e50;
+}
+
+h3 {
+  font-size: 11.5pt;
+  margin: 12pt 0 6pt 0;
+  color: #34495e;
+}
+
+p { margin: 0 0 6pt 0; text-align: justify; }
+
+code {
+  font-family: "DejaVu Sans Mono", "Noto Sans Mono CJK SC", monospace;
+  font-size: 9pt;
+  background: #f4f4f4;
+  padding: 0.5pt 2pt;
+  border-radius: 2pt;
+}
+
+pre {
+  font-family: "DejaVu Sans Mono", "Noto Sans Mono CJK SC", monospace;
+  font-size: 8.4pt;
+  line-height: 1.4;
+  background: #f7f7f7;
+  border: 0.5pt solid #dcdcdc;
+  border-left: 2.5pt solid #4a7ba7;
+  padding: 5pt 7pt;
+  margin: 6pt 0 8pt 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+pre code { background: none; padding: 0; font-size: 8.4pt; }
+
+/* 长代码块允许跨页，避免整页留白 */
+pre { break-inside: auto; page-break-inside: auto; }
+pre { orphans: 4; widows: 4; }
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 6pt 0 10pt 0;
+  font-size: 9pt;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+th, td {
+  border: 0.5pt solid #bbb;
+  padding: 3pt 5pt;
+  vertical-align: top;
+  text-align: left;
+}
+
+th {
+  background: #eaeef2;
+  font-family: "Noto Sans CJK SC", sans-serif;
+  font-weight: 600;
+}
+
+blockquote {
+  margin: 6pt 0 8pt 0;
+  padding: 4pt 8pt;
+  border-left: 2.5pt solid #b0b8c0;
+  background: #fafafa;
+  color: #333;
+  font-size: 9.8pt;
+}
+
+blockquote p { margin: 2pt 0; }
+
+ul, ol { margin: 4pt 0 8pt 0; padding-left: 18pt; }
+li { margin: 2pt 0; }
+
+hr {
+  border: none;
+  border-top: 0.5pt solid #ccc;
+  margin: 12pt 0;
+}
+
+math { font-size: 10pt; }
+math[display="block"] {
+  display: block;
+  margin: 8pt 0;
+  text-align: center;
+}
+
+/* 目录 */
+nav#TOC {
+  break-before: page;
+  page-break-before: always;
+  break-after: page;
+  page-break-after: always;
+  font-size: 10pt;
+}
+nav#TOC::before {
+  content: "目  录";
+  display: block;
+  font-family: "Noto Sans CJK SC", sans-serif;
+  font-size: 18pt;
+  font-weight: 600;
+  margin-bottom: 14pt;
+  padding-bottom: 6pt;
+  border-bottom: 1.5pt solid #2c3e50;
+}
+nav#TOC > ul { list-style: none; padding-left: 0; }
+nav#TOC ul ul { list-style: none; padding-left: 14pt; font-size: 9.5pt; }
+nav#TOC a { text-decoration: none; color: #1a1a1a; }
+nav#TOC > ul > li { margin-top: 5pt; font-weight: 600; }
+nav#TOC > ul > li > ul > li { font-weight: 400; margin-top: 2pt; }
+
+a { color: #1a5490; text-decoration: none; word-wrap: break-word; }
+
+.title { text-align: center; }
+.subtitle { text-align: center; color: #555; font-size: 11pt; }
+.date, .author { text-align: center; color: #666; }
+
+/* 避免标题孤行 */
+h1 + p, h2 + p, h3 + p { break-before: avoid; }
+
+/* 摘要标题中文化 */
+.abstract-title { display: none; }
+.abstract::before {
+  content: "摘　要";
+  display: block;
+  font-family: "Noto Sans CJK SC", sans-serif;
+  font-weight: 600;
+  font-size: 10pt;
+  margin-bottom: 4pt;
+  color: #2c3e50;
+}
+
+/* 目录：页码右对齐 + 引导点 */
+nav#TOC li { display: grid; grid-template-columns: 1fr auto; column-gap: 8pt; align-items: baseline; }
+nav#TOC li > ul { grid-column: 1 / -1; }
+nav#TOC li > a { display: flex; align-items: baseline; min-width: 0; }
+nav#TOC li > a::after {
+  content: "";
+  flex: 1 1 auto;
+  border-bottom: 1px dotted #c4c4c4;
+  margin: 0 6pt;
+  transform: translateY(-2pt);
+}
+nav#TOC li > span.toc-page {
+  flex: 0 0 auto;
+  color: #444;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
