@@ -1,5 +1,8 @@
 # CBF + NeRF · Linux 原生复现
 
+> **版本区分**：本页保留既有 Linux 外挂驱动实验记录。另见 [2026-11-01 Linux 原生移植项目](native-port-2026-11-01/README.md)：独立源码入口、环境、日志、图像和视频。该次双积分器出现 `h_max=+0.0342`，因此本页旧实验的“CBF 全程非正”结论不应套用到新增版本。Windows 版本仍在仓库根目录。
+
+
 > 论文:Tong, Dawson, Fan.《Enforcing Safety for Vision-based Controllers via Control Barrier Functions and Neural Radiance Fields》,ICRA 2023
 > 上游代码:[oscartong2001/nerf_cbf_controller](https://github.com/oscartong2001/nerf_cbf_controller) commit `a514356`
 > 本目录是 **Ubuntu 原生**复现的记录、脚本与结果。Windows 版见仓库根目录的 README。

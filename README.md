@@ -1,5 +1,8 @@
 # CBF + NeRF 视觉安全滤波器 · 论文结果复现
 
+> **平台入口**：本页现有运行说明及根目录 `results/` 为 Windows 复现；Linux 版本见 [Linux 记录](linux/README_Linux原生复现.md)。新增 [2026-11-01 Linux 原生移植项目](linux/native-port-2026-11-01/README.md) 单独保存兼容补丁、环境和完整实测结果，不覆盖 Windows 或既有 Linux 驱动。新增版本修改了入口与兼容代码，不适用下文对 `upstream/` 的“零改动”描述。
+
+
 复现 **Tong, Dawson, Fan, "Enforcing Safety for Vision-based Controllers via Control Barrier Functions and Neural Radiance Fields", ICRA 2023**（[arXiv:2209.12266](https://arxiv.org/abs/2209.12266)）的仿真实验。
 
 `upstream/` 与论文作者公开代码（[oscartong2001/nerf_cbf_controller](https://github.com/oscartong2001/nerf_cbf_controller)，commit `a514356`）**逐字节一致**，唯一例外是 `single_cbf.py` 中 `cv2.VideoWriter` 的一处尺寸修正（见[运行说明](#运行说明)）。回放、出图、参数扫描等全部放在 `tools/` 下的新增脚本里，不修改上游文件。

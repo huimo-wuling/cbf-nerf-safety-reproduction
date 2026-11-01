@@ -1,0 +1,8 @@
+.conda/
+.idea/
+__pycache__/
+*.pyc
+Datasets/
+output/
+video.avi
+tools/pycharm*/
