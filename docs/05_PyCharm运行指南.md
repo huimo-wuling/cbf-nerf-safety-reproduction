@@ -2,7 +2,7 @@
 
 复现论文（ICRA 2023，CBF + NeRF 视觉安全滤波器）的三个仿真结果：图 2、图 3a、图 4a。
 做法是在 PyCharm 底部的终端里运行一个脚本，`upstream/` 下的作者原版代码保持不变。
-每一步的终端输出与产物位置见第 2.1 节。
+每一步的终端输出与产物位置见第 2.1 节，依次运行的核对点见第 2.2 节。
 
 ---
 
@@ -28,7 +28,7 @@ robocopy "C:\Users\L\Desktop\cbf-nerf-safety-reproduction" `
          /E /XD .git output Datasets __pycache__ /XF video.avi
 ```
 
-**终端输出**（robocopy 自带汇总，实测）：
+**终端输出**（robocopy 自带汇总）：
 
 ```text
    ROBOCOPY     ::     Robust File Copy for Windows
@@ -57,20 +57,27 @@ cbf-nerf\
 
 ## 2. 运行
 
-点击 PyCharm 底部的 `Terminal`，执行：
+点击 PyCharm 底部的 `Terminal`。默认终端是 **PowerShell**，按下面两行执行：
+
+```powershell
+cd C:\Users\L\PycharmProjects\PythonProject3\cbf-nerf
+.\run_upstream.bat all
+```
+
+若终端是 **cmd**，等价写法（`cd /d`，且命令前不加 `.\`）：
 
 ```bat
 cd /d C:\Users\L\PycharmProjects\PythonProject3\cbf-nerf
-run_upstream.bat
+run_upstream.bat all
 ```
 
-不带参数即运行单积分器实验。其它组合：
+三种组合：
 
-| 命令 | 运行内容 | 耗时 |
+| 命令（PowerShell 写作 `.\run_upstream.bat`，cmd 写作 `run_upstream.bat`） | 运行内容 | 耗时 |
 |---|---|---|
-| `run_upstream.bat` | 单积分器 150 帧（图 2、图 3a） | 约 20 分钟 |
-| `run_upstream.bat double` | 双积分器 100 步（图 4a） | 约 14 分钟 |
-| `run_upstream.bat all` | 依次运行两者，并生成图 2 的静态拼图 | 约 35 分钟 |
+| `.\run_upstream.bat` | 单积分器 150 帧（图 2、图 3a） | 约 20 分钟 |
+| `.\run_upstream.bat double` | 双积分器 100 步（图 4a） | 约 14 分钟 |
+| `.\run_upstream.bat all` | 依次运行两者，并生成图 2 的静态拼图 | 约 35 分钟 |
 
 ### 2.1 每一步的终端输出与产物位置
 
@@ -89,28 +96,20 @@ run_upstream.bat
 
 运行中可按 `Ctrl+C` 中止，已写入的日志与视频帧仍保留在磁盘。
 
-
 ### 2.2 依次运行的核对点
 
 两个实验串行执行，每步结束后先核对再进入下一步（不要并行，会争用显存）。
 
 | 顺序 | 命令 | 结束后核对 | 通过标准 |
 |---|---|---|---|
-| 1 | 
-un_upstream.bat | 终端最后两行 | == finished: single_cbf.py ... 退出码 0；== 最小最近距离: 0.09xx m |
-| | | upstreamideo.avi | 约 5.3 MB |
-| | | 
-esultsiguresigure3a_single.png | 存在；曲线在第 30 帧附近开始出现干预 |
-| 2 | 
-un_upstream.bat double | 终端最后两行 | == finished: double_cbf.py ... 退出码 0；== 最小最近距离: 0.10xx m |
-| | | 
-esultsiguresigure4a_double.png | 存在；速度曲线由约 1.2 m/s 降到接近 0 |
-| 3 | D:\miniconda\envs
-erf-cbf\python.exe toolsrames_from_video.py upstreamideo.avi | 
-esultsiguresigure2_frames.png | 存在；4×4 帧拼图（论文图 2） |
+| 1 | `.\run_upstream.bat` | 终端最后两行 | `== finished: single_cbf.py ... 退出码 0`；`== 最小最近距离: 0.09xx m` |
+| | | `upstream\video.avi` | 约 5.3 MB |
+| | | `results\figures\figure3a_single.png` | 存在；曲线在第 30 帧附近开始出现干预 |
+| 2 | `.\run_upstream.bat double` | 终端最后两行 | `== finished: double_cbf.py ... 退出码 0`；`== 最小最近距离: 0.10xx m` |
+| | | `results\figures\figure4a_double.png` | 存在；速度曲线由约 1.2 m/s 降到接近 0 |
+| 3 | `D:\miniconda\envs\nerf-cbf\python.exe tools\frames_from_video.py upstream\video.avi` | `results\figures\figure2_frames.png` | 存在；4×4 帧拼图（论文图 2） |
 
-也可以用一条命令依次完成三步：
-un_upstream.bat all。
+也可以用一条命令依次完成三步：`.\run_upstream.bat all`。
 
 上游未设随机种子，候选动作每步重新采样，因此最小距离与干预峰值每次略有不同（实测：单积分器 0.0987–0.0995 m，双积分器 0.1099–0.1116 m）；首次干预的步数是稳定的（单积分器第 30 帧、双积分器第 12 步）。
 
@@ -137,10 +136,11 @@ un_upstream.bat all。
 ```text
 环境   : Python 3.11 + CUDA 版 torch（自动探测，无需指定）
 复制   : robocopy <仓库> <项目>\cbf-nerf /E /XD .git output Datasets __pycache__
-运行   : cd /d <项目>\cbf-nerf
-         run_upstream.bat            → 图 2 + 图 3a（约 20 分钟）
-         run_upstream.bat double     → 图 4a（约 14 分钟）
-         run_upstream.bat all        → 全部（约 35 分钟）
+运行   : cd <项目>\cbf-nerf                       (PowerShell)
+         .\run_upstream.bat            → 图 2 + 图 3a（约 20 分钟）
+         .\run_upstream.bat double     → 图 4a（约 14 分钟）
+         .\run_upstream.bat all        → 全部（约 35 分钟）
+         cmd 终端: 用 cd /d,命令前的 .\ 去掉
 产物   : <项目>\cbf-nerf\upstream\video.avi                 图 2 的帧序列
          <项目>\cbf-nerf\results\figures\*.png 与 *.csv     图 3a / 图 4a 与逐帧数据
          <项目>\cbf-nerf\logs\*.log                         上游原始输出
