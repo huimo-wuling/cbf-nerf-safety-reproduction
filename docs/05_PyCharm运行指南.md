@@ -89,6 +89,31 @@ run_upstream.bat
 
 运行中可按 `Ctrl+C` 中止，已写入的日志与视频帧仍保留在磁盘。
 
+
+### 2.2 依次运行的核对点
+
+两个实验串行执行，每步结束后先核对再进入下一步（不要并行，会争用显存）。
+
+| 顺序 | 命令 | 结束后核对 | 通过标准 |
+|---|---|---|---|
+| 1 | 
+un_upstream.bat | 终端最后两行 | == finished: single_cbf.py ... 退出码 0；== 最小最近距离: 0.09xx m |
+| | | upstreamideo.avi | 约 5.3 MB |
+| | | 
+esultsiguresigure3a_single.png | 存在；曲线在第 30 帧附近开始出现干预 |
+| 2 | 
+un_upstream.bat double | 终端最后两行 | == finished: double_cbf.py ... 退出码 0；== 最小最近距离: 0.10xx m |
+| | | 
+esultsiguresigure4a_double.png | 存在；速度曲线由约 1.2 m/s 降到接近 0 |
+| 3 | D:\miniconda\envs
+erf-cbf\python.exe toolsrames_from_video.py upstreamideo.avi | 
+esultsiguresigure2_frames.png | 存在；4×4 帧拼图（论文图 2） |
+
+也可以用一条命令依次完成三步：
+un_upstream.bat all。
+
+上游未设随机种子，候选动作每步重新采样，因此最小距离与干预峰值每次略有不同（实测：单积分器 0.0987–0.0995 m，双积分器 0.1099–0.1116 m）；首次干预的步数是稳定的（单积分器第 30 帧、双积分器第 12 步）。
+
 ---
 
 ## 3. 结果
